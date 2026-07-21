@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a1a24">
+<title>イカチャット — スプラ3作戦ボード</title>
+<style>
+  :root {
+    --bg: #1a1a24;
+    --panel: #24242f;
+    --panel2: #2e2e3c;
+    --text: #f2f2f5;
+    --sub: #9a9aac;
+    --ink-yellow: #e6f92e;
+    --ink-purple: #a02ce6;
+    --ink-cyan: #2ee6c8;
+    --danger: #f9642e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overscroll-behavior: none; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  button { font-family: inherit; border: none; cursor: pointer; user-select: none; -webkit-user-select: none; }
+
+  /* ===== 参加画面 ===== */
+  #join {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 18px;
+    padding: 28px;
+    max-width: 420px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  #join h1 {
+    font-size: 34px;
+    font-weight: 900;
+    text-align: center;
+    color: var(--ink-yellow);
+    transform: rotate(-2deg);
+    text-shadow: 3px 3px 0 var(--ink-purple);
+    margin-bottom: 4px;
+  }
+  #join .tagline { text-align: center; color: var(--sub); font-size: 13px; margin-bottom: 12px; }
+  #join label { font-size: 13px; color: var(--sub); font-weight: 700; }
+  #join input {
+    width: 100%;
+    padding: 14px 16px;
+    font-size: 18px;
+    border: 2px solid var(--panel2);
+    border-radius: 14px;
+    background: var(--panel);
+    color: var(--text);
+    outline: none;
+  }
+  #join input:focus { border-color: var(--ink-cyan); }
+  .btn-big {
+    padding: 16px;
+    font-size: 17px;
+    font-weight: 900;
+    border-radius: 16px;
+    transition: transform .08s;
+  }
+  .btn-big:active { transform: scale(.96); }
+  #btnCreate { background: var(--ink-yellow); color: #1a1a24; }
+  .join-row { display: flex; gap: 10px; }
+  .join-row input { flex: 1; letter-spacing: .3em; text-align: center; font-weight: 700; }
+  #btnJoin { background: var(--ink-cyan); color: #1a1a24; padding: 0 22px; font-size: 16px; font-weight: 900; border-radius: 14px; }
+  #joinError { color: var(--danger); font-size: 13px; text-align: center; min-height: 18px; font-weight: 700; }
+  .divider { display: flex; align-items: center; gap: 10px; color: var(--sub); font-size: 12px; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--panel2); }
+
+  /* ===== メイン画面 ===== */
+  #main { display: none; flex-direction: column; height: 100%; }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--panel);
+    border-bottom: 2px solid var(--panel2);
+    flex-shrink: 0;
+  }
+  #roomCode {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--ink-yellow);
+    letter-spacing: .15em;
+  }
+  #roomCode small { font-size: 10px; color: var(--sub); display: block; letter-spacing: 0; font-weight: 700; }
+  #memberDots { display: flex; gap: 5px; flex: 1; }
+  #memberDots span {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid rgba(255,255,255,.25);
+  }
+  .hbtn {
+    background: var(--panel2);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 8px 11px;
+    font-size: 16px;
+    line-height: 1;
+  }
+  .hbtn.off { opacity: .35; }
+
+  /* メッセージ表示エリア（残らない・自動で消える） */
+  #feed {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 14px;
+    position: relative;
+  }
+  #feedHint {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--sub);
+    font-size: 13px;
+    text-align: center;
+    pointer-events: none;
+    padding: 20px;
+    line-height: 1.8;
+  }
+  .bubble {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--panel);
+    border-radius: 16px;
+    padding: 10px 14px;
+    border-left: 6px solid;
+    animation: pop .25s cubic-bezier(.34,1.56,.64,1);
+    transition: opacity .8s, transform .8s;
+    flex-shrink: 0;
+  }
+  .bubble.fading { opacity: 0; transform: translateX(-16px); }
+  .bubble .who { font-size: 11px; font-weight: 900; opacity: .9; }
+  .bubble .what { font-size: 19px; font-weight: 900; line-height: 1.3; }
+  .bubble .what.plain { font-size: 16px; font-weight: 700; }
+  .bubble .emoji { font-size: 28px; }
+  .bubble.sys {
+    border-left: none;
+    background: none;
+    justify-content: center;
+    padding: 2px;
+  }
+  .bubble.sys .what { font-size: 12px; color: var(--sub); font-weight: 700; }
+  @keyframes pop {
+    from { transform: scale(.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* スタンプグリッド：ワンタップ即送信 */
+  #stamps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--panel);
+    border-top: 2px solid var(--panel2);
+    flex-shrink: 0;
+    max-height: 48dvh;
+    overflow-y: auto;
+  }
+  .stamp {
+    background: var(--panel2);
+    border-radius: 12px;
+    padding: 7px 2px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--text);
+    transition: transform .08s, background .08s;
+  }
+  .stamp:active { transform: scale(.9); background: #3a3a4c; }
+  .stamp .ic { font-size: 21px; line-height: 1; }
+  .stamp .lb { font-size: 10px; font-weight: 900; white-space: nowrap; }
+  .stamp.urgent { background: #4a2430; }
+  .stamp.good { background: #24402f; }
+
+  /* 自由入力 */
+  #inputRow {
+    display: flex;
+    gap: 8px;
+    padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+    background: var(--panel);
+    flex-shrink: 0;
+  }
+  #textInput {
+    flex: 1;
+    padding: 11px 16px;
+    font-size: 16px;
+    border: 2px solid var(--panel2);
+    border-radius: 22px;
+    background: var(--bg);
+    color: var(--text);
+    outline: none;
+    min-width: 0;
+  }
+  #btnSend {
+    background: var(--ink-purple);
+    color: #fff;
+    font-weight: 900;
+    border-radius: 22px;
+    padding: 0 20px;
+    font-size: 15px;
+  }
+</style>
+</head>
+<body>
+
+<!-- 参加画面 -->
+<div id="join">
+  <h1>イカチャット</h1>
+  <p class="tagline">スプラ3 作戦共有ボード ／ ログは一切残りません</p>
+  <div>
+    <label>プレイヤー名</label>
+    <input id="nameInput" maxlength="12" placeholder="例：たこやき" autocomplete="off">
+  </div>
+  <button id="btnCreate" class="btn-big">ルームを作る</button>
+  <div class="divider">または</div>
+  <div class="join-row">
+    <input id="codeInput" maxlength="4" inputmode="numeric" placeholder="0000" autocomplete="off">
+    <button id="btnJoin">参加</button>
+  </div>
+  <p id="joinError"></p>
+</div>
+
+<!-- メイン画面 -->
+<div id="main">
+  <header>
+    <div id="roomCode"><small>ルーム</small><span id="roomCodeNum"></span></div>
+    <div id="memberDots"></div>
+    <button id="btnSpeak" class="hbtn" title="読み上げ">🔊</button>
+    <button id="btnLeave" class="hbtn" title="退出">✕</button>
+  </header>
+
+  <div id="feed">
+    <div id="feedHint">スタンプをタップで即送信！<br>メッセージは数秒で消えます🦑</div>
+  </div>
+
+  <div id="stamps"></div>
+
+  <div id="inputRow">
+    <input id="textInput" maxlength="100" placeholder="自由メッセージ…" autocomplete="off" enterkeyhint="send">
+    <button id="btnSend">送信</button>
+  </div>
+</div>
+
+<script src="mqtt.min.js"></script>
+<script>
+// ===== スタンプ定義（ワンタップ即送信）=====
+// speak: 読み上げテキスト（プレイ中は画面を見られないので音声が本体）
+const STAMPS = [
+  { id: 'push',    ic: '⬆️', lb: '前線上げて', speak: '前線上げて！', cls: '' },
+  { id: 'back',    ic: '⬇️', lb: '下がろう',   speak: '下がろう！', cls: 'urgent' },
+  { id: 'adv',     ic: '🟢', lb: '人数有利',   speak: '人数有利！', cls: 'good' },
+  { id: 'disadv',  ic: '🔴', lb: '人数不利',   speak: '人数不利！', cls: 'urgent' },
+  { id: 'enemyL',  ic: '⬅️', lb: '左に敵',     speak: '左に敵！', cls: 'urgent' },
+  { id: 'enemyR',  ic: '➡️', lb: '右に敵',     speak: '右に敵！', cls: 'urgent' },
+  { id: 'flank',   ic: '⚠️', lb: '裏取り注意', speak: '裏取り注意！', cls: 'urgent' },
+  { id: 'hide',    ic: '🥷', lb: '潜伏注意',   speak: '潜伏注意！', cls: 'urgent' },
+  { id: 'kill1',   ic: '🔥', lb: '1キル！',    speak: 'ワンキル！', cls: 'good' },
+  { id: 'kill2',   ic: '💥', lb: '2キル！',    speak: 'ツーキル！', cls: 'good' },
+  { id: 'dead',    ic: '💀', lb: 'やられた',   speak: 'やられた！', cls: 'urgent' },
+  { id: 'roger',   ic: '👌', lb: '了解',       speak: '了解！', cls: '' },
+  { id: 'regroup', ic: '🤝', lb: '合流しよう', speak: '合流しよう！', cls: '' },
+  { id: 'wait',    ic: '⏳', lb: '復帰待って', speak: '復帰待って！', cls: '' },
+  { id: 'spsync',  ic: '🎆', lb: 'SP合わせよう', speak: 'スペシャル合わせよう！', cls: '' },
+  { id: 'sp',      ic: '✨', lb: 'SPあるよ',   speak: 'スペシャルあるよ！', cls: '' },
+  { id: 'chance',  ic: '🚀', lb: '今がチャンス', speak: '今がチャンス！', cls: 'good' },
+  { id: 'stall',   ic: '🕐', lb: '時間を使おう', speak: '時間を使おう！', cls: '' },
+  { id: 'comeon',  ic: '🙌', lb: 'カモン',     speak: 'カモン！', cls: '' },
+  { id: 'nice',    ic: '👏', lb: 'ナイス',     speak: 'ナイス！', cls: '' },
+  { id: 'rally',   ic: '💪', lb: '打開いくよ', speak: '打開いくよ！', cls: '' },
+];
+const STAMP_MAP = Object.fromEntries(STAMPS.map(s => [s.id, s]));
+
+// ===== 通信：公開MQTTブローカー経由（サーバー不要・保存なし）=====
+// retainなしのpub/subのみを使うため、ブローカーにもメッセージは残らない
+const BROKERS = [
+  'wss://broker.emqx.io:8084/mqtt',
+  'wss://test.mosquitto.org:8081',
+];
+const TOPIC_PREFIX = 'ikachat3-kwnrys/';
+const INK_COLORS = ['#e6f92e', '#a02ce6', '#2ee6c8', '#f9642e', '#2e8bf9', '#f92e8b', '#7df92e', '#f9d02e'];
+
+const $ = id => document.getElementById(id);
+let client = null;
+let topic = null;
+let speakOn = true;
+let myName = '';
+let myColor = INK_COLORS[0];
+const myCid = Math.random().toString(36).slice(2, 10);
+const members = new Map(); // cid -> {name, color, last}
+let hbTimer = null;
+
+$('nameInput').value = localStorage.getItem('ikachat-name') || '';
+
+function getName() {
+  const n = $('nameInput').value.trim() || 'プレイヤー' + Math.floor(Math.random() * 100);
+  localStorage.setItem('ikachat-name', n);
+  return n;
+}
+
+// cidから安定した色を選ぶ（完全な重複回避はしない）
+function pickColor(cid) {
+  let h = 0;
+  for (const c of cid) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return INK_COLORS[h % INK_COLORS.length];
+}
+
+let connecting = false;
+function connect(room, brokerIdx = 0) {
+  if (connecting) return;
+  if (typeof mqtt === 'undefined') {
+    $('joinError').textContent = '通信ライブラリ（mqtt.min.js）が読み込めていません';
+    return;
+  }
+  if (brokerIdx >= BROKERS.length) {
+    connecting = false;
+    $('joinError').textContent = 'サーバーに接続できません。電波状況を確認してもう一度試してね';
+    return;
+  }
+  connecting = true;
+  $('joinError').textContent = '接続中…';
+  const c = mqtt.connect(BROKERS[brokerIdx], {
+    clientId: 'ika_' + myCid,
+    keepalive: 30,
+    clean: true,
+    connectTimeout: 6000,
+    reconnectPeriod: 3000,
+  });
+  let opened = false;
+  c.on('connect', () => {
+    if (!opened) {
+      opened = true;
+      client = c;
+      topic = TOPIC_PREFIX + room;
+      c.subscribe(topic, { qos: 0 }, () => {
+        enterRoom(room);
+        pub({ k: 'join' });
+        startHeartbeat();
+      });
+    }
+  });
+  c.on('message', (t, payload) => {
+    let msg;
+    try { msg = JSON.parse(payload.toString()); } catch { return; }
+    onMessage(msg);
+  });
+  c.on('error', () => {
+    if (!opened) {
+      c.end(true);
+      connecting = false;
+      connect(room, brokerIdx + 1); // 次のブローカーへフォールバック
+    }
+  });
+  c.on('offline', () => {
+    if (opened && $('main').style.display === 'flex') {
+      addBubble({ kind: 'sys', text: '接続が不安定です…再接続中' });
+    }
+  });
+}
+
+function pub(obj) {
+  if (!client || !topic) return;
+  client.publish(topic, JSON.stringify({ ...obj, cid: myCid, name: myName, color: myColor }), { qos: 0, retain: false });
+}
+
+function enterRoom(room) {
+  $('joinError').textContent = '';
+  $('join').style.display = 'none';
+  $('main').style.display = 'flex';
+  $('roomCodeNum').textContent = room;
+  members.set(myCid, { name: myName, color: myColor, last: Date.now() });
+  renderMembers();
+}
+
+// ===== 参加画面のボタン =====
+$('btnCreate').onclick = () => {
+  myName = getName();
+  myColor = pickColor(myCid);
+  connect(String(Math.floor(1000 + Math.random() * 9000)));
+};
+$('btnJoin').onclick = () => {
+  const code = $('codeInput').value.trim();
+  if (!/^\d{4}$/.test(code)) { $('joinError').textContent = '4桁のルーム番号を入れてね'; return; }
+  myName = getName();
+  myColor = pickColor(myCid);
+  connect(code);
+};
+$('codeInput').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnJoin').click(); });
+
+// ===== 受信処理 =====
+function onMessage(msg) {
+  if (!msg.cid) return;
+  const isMe = msg.cid === myCid;
+
+  // メンバー表（ハートビートで維持、40秒応答なしで消す）
+  if (msg.k === 'join' || msg.k === 'hb' || msg.k === 'stamp' || msg.k === 'text') {
+    const known = members.has(msg.cid);
+    members.set(msg.cid, { name: msg.name, color: msg.color, last: Date.now() });
+    if (msg.k === 'join' && !isMe) {
+      addBubble({ kind: 'sys', text: `${msg.name} が参加した！` });
+      pub({ k: 'hb' }); // 新入りに自分の存在を知らせる
+    } else if (!known && !isMe) {
+      renderMembers();
+    }
+    if (msg.k === 'join' || !known) renderMembers();
+  }
+  if (msg.k === 'leave' && !isMe) {
+    members.delete(msg.cid);
+    addBubble({ kind: 'sys', text: `${msg.name} が退出した` });
+    renderMembers();
+    return;
+  }
+
+  if (msg.k === 'stamp') {
+    addBubble({ kind: 'stamp', id: msg.id, name: msg.name, color: msg.color });
+    if (!isMe) { vibrate(); if (speakOn) speak({ kind: 'stamp', id: msg.id }); }
+  } else if (msg.k === 'text') {
+    addBubble({ kind: 'text', text: msg.text, name: msg.name, color: msg.color });
+    if (!isMe) { vibrate(); if (speakOn) speak({ kind: 'text', text: msg.text }); }
+  }
+}
+
+function startHeartbeat() {
+  hbTimer = setInterval(() => {
+    pub({ k: 'hb' });
+    const now = Date.now();
+    let changed = false;
+    for (const [cid, m] of members) {
+      if (cid !== myCid && now - m.last > 40000) { members.delete(cid); changed = true; }
+    }
+    if (changed) renderMembers();
+  }, 15000);
+}
+
+function renderMembers() {
+  $('memberDots').innerHTML = [...members.values()].map(m =>
+    `<span style="background:${m.color}" title="${esc(m.name)}"></span>`).join('');
+}
+
+// ===== メッセージ表示（8秒で消滅・DOMからも削除＝ログなし）=====
+const FADE_MS = 8000;
+function addBubble(msg) {
+  $('feedHint').style.display = 'none';
+  const el = document.createElement('div');
+  if (msg.kind === 'sys') {
+    el.className = 'bubble sys';
+    el.innerHTML = `<span class="what">${esc(msg.text)}</span>`;
+  } else if (msg.kind === 'stamp') {
+    const s = STAMP_MAP[msg.id] || { ic: '❓', lb: msg.id };
+    el.className = 'bubble';
+    el.style.borderLeftColor = msg.color;
+    el.innerHTML = `<span class="emoji">${s.ic}</span>
+      <div><div class="who" style="color:${msg.color}">${esc(msg.name)}</div>
+      <div class="what">${esc(s.speak || s.lb)}</div></div>`;
+  } else {
+    el.className = 'bubble';
+    el.style.borderLeftColor = msg.color;
+    el.innerHTML = `<div><div class="who" style="color:${msg.color}">${esc(msg.name)}</div>
+      <div class="what plain">${esc(msg.text)}</div></div>`;
+  }
+  $('feed').appendChild(el);
+  const bubbles = $('feed').querySelectorAll('.bubble');
+  if (bubbles.length > 6) bubbles[0].remove();
+  setTimeout(() => {
+    el.classList.add('fading');
+    setTimeout(() => el.remove(), 800);
+  }, FADE_MS);
+}
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+// ===== 読み上げ・バイブ =====
+function speak(msg) {
+  if (!('speechSynthesis' in window)) return;
+  const text = msg.kind === 'stamp' ? (STAMP_MAP[msg.id]?.speak || '') : msg.text;
+  if (!text) return;
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  u.rate = 1.3;
+  speechSynthesis.cancel();
+  speechSynthesis.speak(u);
+}
+function vibrate() {
+  if (navigator.vibrate) navigator.vibrate(80);
+}
+
+$('btnSpeak').onclick = () => {
+  speakOn = !speakOn;
+  $('btnSpeak').textContent = speakOn ? '🔊' : '🔇';
+  $('btnSpeak').classList.toggle('off', !speakOn);
+};
+$('btnLeave').onclick = () => {
+  if (confirm('ルームから退出する？')) {
+    pub({ k: 'leave' });
+    setTimeout(() => location.reload(), 150);
+  }
+};
+window.addEventListener('pagehide', () => { try { pub({ k: 'leave' }); } catch {} });
+
+// ===== スタンプグリッド生成（タップ即送信）=====
+for (const s of STAMPS) {
+  const b = document.createElement('button');
+  b.className = 'stamp ' + s.cls;
+  b.innerHTML = `<span class="ic">${s.ic}</span><span class="lb">${s.lb}</span>`;
+  b.onclick = () => pub({ k: 'stamp', id: s.id });
+  $('stamps').appendChild(b);
+}
+
+// ===== 自由入力 =====
+function sendText() {
+  const text = $('textInput').value.trim();
+  if (!text) return;
+  pub({ k: 'text', text: text.slice(0, 100) });
+  $('textInput').value = '';
+}
+$('btnSend').onclick = sendText;
+$('textInput').addEventListener('keydown', e => { if (e.key === 'Enter') sendText(); });
+</script>
+</body>
+</html>
