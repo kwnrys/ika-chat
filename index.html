@@ -328,19 +328,21 @@ function pickColor(cid) {
   return INK_COLORS[h % INK_COLORS.length];
 }
 
-let connecting = false;
+// 押し直しは常に許可：進行中の接続があれば破棄して新しく張り直す
+let pendingClient = null;
 function connect(room, brokerIdx = 0) {
-  if (connecting) return;
   if (typeof mqtt === 'undefined') {
     $('joinError').textContent = '通信ライブラリ（mqtt.min.js）が読み込めていません';
     return;
   }
   if (brokerIdx >= BROKERS.length) {
-    connecting = false;
     $('joinError').textContent = 'サーバーに接続できません。電波状況を確認してもう一度試してね';
     return;
   }
-  connecting = true;
+  if (brokerIdx === 0 && pendingClient) {
+    try { pendingClient.end(true); } catch {}
+    pendingClient = null;
+  }
   $('joinError').textContent = '接続中…';
   const c = mqtt.connect(BROKERS[brokerIdx], {
     clientId: 'ika_' + myCid,
@@ -349,10 +351,12 @@ function connect(room, brokerIdx = 0) {
     connectTimeout: 6000,
     reconnectPeriod: 3000,
   });
+  pendingClient = c;
   let opened = false;
   c.on('connect', () => {
     if (!opened) {
       opened = true;
+      pendingClient = null;
       client = c;
       topic = TOPIC_PREFIX + room;
       c.subscribe(topic, { qos: 0 }, () => {
@@ -370,7 +374,7 @@ function connect(room, brokerIdx = 0) {
   c.on('error', () => {
     if (!opened) {
       c.end(true);
-      connecting = false;
+      if (pendingClient === c) pendingClient = null;
       connect(room, brokerIdx + 1); // 次のブローカーへフォールバック
     }
   });
