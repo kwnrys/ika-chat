@@ -587,17 +587,30 @@ function unlockTTS() {
   u.volume = 0;
   speechSynthesis.speak(u);
 }
+// Android Chromeはcancel()直後のspeak()が無視される既知バグがあるため、
+// cancel→少し待つ→resume→speak の順で確実に発話させる。
+// 発話中のutteranceがGCされて途切れる対策で参照も保持する
+let lastUtter = null;
+function speakNow(text, rate) {
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ja-JP';
+  if (jaVoice) u.voice = jaVoice;
+  u.rate = rate;
+  lastUtter = u;
+  try { speechSynthesis.cancel(); } catch {}
+  setTimeout(() => {
+    try {
+      speechSynthesis.resume(); // 一時停止状態だと鳴らない端末があるため解除
+      speechSynthesis.speak(u);
+    } catch {}
+  }, 60);
+}
 function speak(msg) {
   if (!('speechSynthesis' in window)) return;
   const text = msg.kind === 'stamp' ? (STAMP_MAP[msg.id]?.speak || '') : msg.text;
   if (!text) return;
   // 宛先付きなら「〇〇さん、カモン！」のように宛先を先に読む
-  const u = new SpeechSynthesisUtterance(msg.toName ? `${msg.toName}さん、${text}` : text);
-  u.lang = 'ja-JP';
-  if (jaVoice) u.voice = jaVoice;
-  u.rate = 1.3;
-  speechSynthesis.cancel();
-  speechSynthesis.speak(u);
+  speakNow(msg.toName ? `${msg.toName}さん、${text}` : text, 1.3);
 }
 function vibrate() {
   if (navigator.vibrate) navigator.vibrate(80);
@@ -610,14 +623,9 @@ $('btnSpeak').onclick = () => {
   if (speakOn && 'speechSynthesis' in window) {
     // ONにした瞬間に声でフィードバック（解錠も兼ねる）
     ttsUnlocked = true;
-    const u = new SpeechSynthesisUtterance('読み上げオン');
-    u.lang = 'ja-JP';
-    if (jaVoice) u.voice = jaVoice;
-    u.rate = 1.2;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  } else {
-    speechSynthesis.cancel();
+    speakNow('読み上げオン', 1.2);
+  } else if ('speechSynthesis' in window) {
+    try { speechSynthesis.cancel(); } catch {}
   }
 };
 // 退出：confirm()はアプリ内ブラウザでブロックされることがあるため使わない。
