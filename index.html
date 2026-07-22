@@ -197,6 +197,18 @@
   .stamp.urgent { background: #4a2430; }
   .stamp.good { background: #24402f; }
 
+  /* スマホでは正方形の大きなタイルにしてタップしやすく */
+  @media (max-width: 480px) {
+    .stamp {
+      aspect-ratio: 1 / 1;
+      justify-content: center;
+      gap: 6px;
+      border-radius: 16px;
+    }
+    .stamp .ic { font-size: 32px; }
+    .stamp .lb { font-size: 11.5px; }
+  }
+
   /* プレイヤー行：選んでからスタンプでその人宛てに送信 */
   #players {
     display: grid;
