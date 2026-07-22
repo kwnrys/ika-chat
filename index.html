@@ -304,22 +304,14 @@ const STAMPS = [
   { id: 'back',    ic: '⬇️', lb: '下がろう',   speak: '下がろう！', cls: 'urgent' },
   { id: 'adv',     ic: '🟢', lb: '人数有利',   speak: '人数有利！', cls: 'good' },
   { id: 'disadv',  ic: '🔴', lb: '人数不利',   speak: '人数不利！', cls: 'urgent' },
-  { id: 'enemyL',  ic: '⬅️', lb: '左に敵',     speak: '左に敵！', cls: 'urgent' },
-  { id: 'enemyR',  ic: '➡️', lb: '右に敵',     speak: '右に敵！', cls: 'urgent' },
-  { id: 'flank',   ic: '⚠️', lb: '裏取り注意', speak: '裏取り注意！', cls: 'urgent' },
   { id: 'hide',    ic: '🥷', lb: '潜伏注意',   speak: '潜伏注意！', cls: 'urgent' },
-  { id: 'kill1',   ic: '🔥', lb: '1キル！',    speak: 'ワンキル！', cls: 'good' },
   { id: 'kill2',   ic: '💥', lb: '2キル！',    speak: 'ツーキル！', cls: 'good' },
   { id: 'dead',    ic: '💀', lb: 'やられた',   speak: 'やられた！', cls: 'urgent' },
   { id: 'roger',   ic: '👌', lb: '了解',       speak: '了解！', cls: '' },
-  { id: 'regroup', ic: '✋', lb: 'ちょっと待って', speak: 'ちょっと待って！', cls: '' },
-  { id: 'spsync',  ic: '🎆', lb: 'SP合わせよう', speak: 'スペシャル合わせよう！', cls: '' },
   { id: 'sp',      ic: '✨', lb: 'SPあるよ',   speak: 'スペシャルあるよ！', cls: '' },
   { id: 'chance',  ic: '🚀', lb: '今がチャンス', speak: '今がチャンス！', cls: 'good' },
-  { id: 'stall',   ic: '🕐', lb: '時間を使おう', speak: '時間を使おう！', cls: '' },
   { id: 'comeon',  ic: '🙌', lb: 'カモン',     speak: 'カモン！', cls: '' },
   { id: 'nice',    ic: '👏', lb: 'ナイス',     speak: 'ナイス！', cls: '' },
-  { id: 'rally',   ic: '💪', lb: '打開いくよ', speak: '打開いくよ！', cls: '' },
 ];
 const STAMP_MAP = Object.fromEntries(STAMPS.map(s => [s.id, s]));
 
