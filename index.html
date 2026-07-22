@@ -477,17 +477,25 @@ function onMessage(msg) {
   }
 }
 
+// バックグラウンドタブはタイマーが間引かれる（Chromeで最大1分間隔）ため、
+// 猶予は余裕をもって130秒。明示的な退出はleaveメッセージで即反映される
+const HB_MS = 20000;
+const PRUNE_MS = 130000;
 function startHeartbeat() {
   hbTimer = setInterval(() => {
     pub({ k: 'hb' });
     const now = Date.now();
     let changed = false;
     for (const [cid, m] of members) {
-      if (cid !== myCid && now - m.last > 40000) { members.delete(cid); changed = true; }
+      if (cid !== myCid && now - m.last > PRUNE_MS) { members.delete(cid); changed = true; }
     }
     if (changed) renderMembers();
-  }, 15000);
+  }, HB_MS);
 }
+// アプリに戻ってきた瞬間に生存を知らせる（LINE等から切り替えた直後の表示ズレを防ぐ）
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible' && client && client.connected) pub({ k: 'hb' });
+});
 
 function renderMembers() {
   $('memberDots').innerHTML = [...members.values()].map(m =>
