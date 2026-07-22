@@ -315,14 +315,14 @@
 // ===== スタンプ定義（ワンタップ即送信）=====
 // speak: 読み上げテキスト（プレイ中は画面を見られないので音声が本体）
 const STAMPS = [
-  { id: 'adv',     ic: '🟢', lb: '人数有利',   speak: '人数有利！', cls: 'good wide'   img: 'stamps/adv.png' },
-  { id: 'disadv',  ic: '🔴', lb: '人数不利',   speak: '人数不利！', cls: 'urgent wide'   img: 'stamps/disadv.png' },
-  { id: 'push',    ic: '⬆️', lb: '前線上げて', speak: '前線上げて！', cls: ''   img: 'stamps/push.png' },
-  { id: 'hide',    ic: '🥷', lb: '潜伏注意',   speak: '潜伏注意！', cls: 'urgent'   img: 'stamps/hide.png' },
-  { id: 'dead',    ic: '💀', lb: 'やられた',   speak: 'やられた！', cls: 'urgent'   img: 'stamps/dead.png' },
-  { id: 'sp',      ic: '✨', lb: 'SPあるよ',   speak: 'スペシャルあるよ！', cls: ''   img: 'stamps/sp.png' },
-  { id: 'wait',    ic: '⬇️', lb: 'ちょっと待って', speak: 'ちょっと待って！', cls: ''   img: 'stamps/wait.png' },
-  { id: 'nice',    ic: '👏', lb: 'ナイス',     speak: 'ナイス！', cls: ''   img: 'stamps/nice.png' },
+  { id: 'adv',     ic: '🟢', lb: '人数有利',   speak: '人数有利！', cls: 'good wide', img: 'stamps/adv.png' },
+  { id: 'disadv',  ic: '🔴', lb: '人数不利',   speak: '人数不利！', cls: 'urgent wide', img: 'stamps/disadv.png' },
+  { id: 'push',    ic: '⬆️', lb: '前線上げて', speak: '前線上げて！', cls: '', img: 'stamps/push.png' },
+  { id: 'hide',    ic: '🥷', lb: '潜伏注意',   speak: '潜伏注意！', cls: 'urgent', img: 'stamps/hide.png' },
+  { id: 'dead',    ic: '💀', lb: 'やられた',   speak: 'やられた！', cls: 'urgent', img: 'stamps/dead.png' },
+  { id: 'sp',      ic: '✨', lb: 'SPあるよ',   speak: 'スペシャルあるよ！', cls: '', img: 'stamps/sp.png' },
+  { id: 'wait',    ic: '⬇️', lb: 'ちょっと待って', speak: 'ちょっと待って！', cls: '', img: 'stamps/wait.png' },
+  { id: 'nice',    ic: '👏', lb: 'ナイス',     speak: 'ナイス！', cls: '', img: 'stamps/nice.png' },
 ];
 const STAMP_MAP = Object.fromEntries(STAMPS.map(s => [s.id, s]));
 // イラストを先読みして受信時に即表示
