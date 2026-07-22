@@ -113,6 +113,7 @@
     line-height: 1;
   }
   .hbtn.off { opacity: .35; }
+  .hbtn.danger { background: var(--danger); color: #fff; font-size: 13px; font-weight: 900; }
 
   /* メッセージ表示エリア（残らない・自動で消える） */
   #feed {
@@ -585,10 +586,39 @@ $('btnSpeak').onclick = () => {
   $('btnSpeak').textContent = speakOn ? '🔊' : '🔇';
   $('btnSpeak').classList.toggle('off', !speakOn);
 };
+// 退出：confirm()はアプリ内ブラウザでブロックされることがあるため使わない。
+// 1回目のタップで「退出？」表示、3秒以内の2回目で確実に退出する
+function leaveRoom() {
+  try { pub({ k: 'leave' }); } catch {}
+  if (hbTimer) { clearInterval(hbTimer); hbTimer = null; }
+  const c = client;
+  client = null; topic = null; target = null; pendingClient = null;
+  try { if (c) c.end(); } catch {}
+  members.clear();
+  // 表示をリセットして参加画面へ（リロードに頼らない）
+  for (const b of document.querySelectorAll('#feed .bubble')) b.remove();
+  $('feedHint').style.display = 'flex';
+  $('memberDots').innerHTML = '';
+  $('players').innerHTML = '';
+  $('roomCodeNum').textContent = '';
+  $('joinError').textContent = '';
+  $('main').style.display = 'none';
+  $('join').style.display = 'flex';
+}
+let leaveArmed = null;
+function resetLeaveBtn() {
+  if (leaveArmed) { clearTimeout(leaveArmed); leaveArmed = null; }
+  $('btnLeave').textContent = '✕';
+  $('btnLeave').classList.remove('danger');
+}
 $('btnLeave').onclick = () => {
-  if (confirm('ルームから退出する？')) {
-    pub({ k: 'leave' });
-    setTimeout(() => location.reload(), 150);
+  if (leaveArmed) {
+    resetLeaveBtn();
+    leaveRoom();
+  } else {
+    $('btnLeave').textContent = '退出？';
+    $('btnLeave').classList.add('danger');
+    leaveArmed = setTimeout(resetLeaveBtn, 3000);
   }
 };
 window.addEventListener('pagehide', () => { try { pub({ k: 'leave' }); } catch {} });
