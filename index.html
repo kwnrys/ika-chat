@@ -467,9 +467,9 @@ function onMessage(msg) {
   }
 
   if (msg.k === 'stamp') {
-    // 宛先付き（個別）は「送り主 → 宛先」表示。全員に見える
-    const who = msg.to ? `${msg.name} → ${msg.toName || '？'}` : msg.name;
-    addBubble({ kind: 'stamp', id: msg.id, name: who, color: msg.color });
+    // 宛先付き（個別）は「送り主 →」＋大きく「宛先さんへ：スタンプ」表示。全員に見える
+    const who = msg.to ? `${msg.name} →` : msg.name;
+    addBubble({ kind: 'stamp', id: msg.id, name: who, color: msg.color, toName: msg.to ? (msg.toName || '？') : null });
     if (!isMe) { vibrate(); if (speakOn) speak({ kind: 'stamp', id: msg.id, toName: msg.to ? msg.toName : null }); }
   } else if (msg.k === 'text') {
     addBubble({ kind: 'text', text: msg.text, name: msg.name, color: msg.color });
@@ -540,9 +540,11 @@ function addBubble(msg) {
     const s = STAMP_MAP[msg.id] || { ic: '❓', lb: msg.id };
     el.className = 'bubble';
     el.style.borderLeftColor = msg.color;
+    // 宛先付きは「宛先さんへ：」をスタンプ本文と同じ大きさで表示
+    const body = msg.toName ? `${msg.toName} さんへ：${s.speak || s.lb}` : (s.speak || s.lb);
     el.innerHTML = `<span class="emoji">${s.ic}</span>
       <div><div class="who" style="color:${msg.color}">${esc(msg.name)}</div>
-      <div class="what">${esc(s.speak || s.lb)}</div></div>`;
+      <div class="what">${esc(body)}</div></div>`;
   } else {
     el.className = 'bubble';
     el.style.borderLeftColor = msg.color;
@@ -567,8 +569,8 @@ function speak(msg) {
   if (!('speechSynthesis' in window)) return;
   const text = msg.kind === 'stamp' ? (STAMP_MAP[msg.id]?.speak || '') : msg.text;
   if (!text) return;
-  // 宛先付きなら「〇〇、カモン！」のように名前を先に読む
-  const u = new SpeechSynthesisUtterance(msg.toName ? `${msg.toName}、${text}` : text);
+  // 宛先付きなら「〇〇さんへ、カモン！」のように宛先を先に読む
+  const u = new SpeechSynthesisUtterance(msg.toName ? `${msg.toName}さんへ、${text}` : text);
   u.lang = 'ja-JP';
   u.rate = 1.3;
   speechSynthesis.cancel();
