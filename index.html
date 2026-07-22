@@ -430,11 +430,13 @@ function enterRoom(room) {
 
 // ===== 参加画面のボタン =====
 $('btnCreate').onclick = () => {
+  unlockTTS(); // タップ（ユーザー操作）のうちに読み上げを解錠
   myName = getName();
   myColor = pickColor(myCid);
   connect(String(Math.floor(1000 + Math.random() * 9000)));
 };
 $('btnJoin').onclick = () => {
+  unlockTTS();
   const code = $('codeInput').value.trim();
   if (!/^\d{4}$/.test(code)) { $('joinError').textContent = '4桁のルーム番号を入れてね'; return; }
   myName = getName();
@@ -566,6 +568,25 @@ function esc(s) {
 }
 
 // ===== 読み上げ・バイブ =====
+// iPhone等のブラウザは「ユーザー操作中に一度speakする」まで音声をブロックするため、
+// ボタンタップのタイミングで無音発話して解錠しておく（これで受信時の自動読み上げが鳴る）
+let ttsUnlocked = false;
+let jaVoice = null;
+function pickVoice() {
+  const vs = speechSynthesis.getVoices();
+  jaVoice = vs.find(v => v.lang === 'ja-JP' && v.localService) || vs.find(v => v.lang && v.lang.startsWith('ja')) || null;
+}
+if ('speechSynthesis' in window) {
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+function unlockTTS() {
+  if (ttsUnlocked || !('speechSynthesis' in window)) return;
+  ttsUnlocked = true;
+  const u = new SpeechSynthesisUtterance(' ');
+  u.volume = 0;
+  speechSynthesis.speak(u);
+}
 function speak(msg) {
   if (!('speechSynthesis' in window)) return;
   const text = msg.kind === 'stamp' ? (STAMP_MAP[msg.id]?.speak || '') : msg.text;
@@ -573,6 +594,7 @@ function speak(msg) {
   // 宛先付きなら「〇〇さん、カモン！」のように宛先を先に読む
   const u = new SpeechSynthesisUtterance(msg.toName ? `${msg.toName}さん、${text}` : text);
   u.lang = 'ja-JP';
+  if (jaVoice) u.voice = jaVoice;
   u.rate = 1.3;
   speechSynthesis.cancel();
   speechSynthesis.speak(u);
@@ -585,6 +607,18 @@ $('btnSpeak').onclick = () => {
   speakOn = !speakOn;
   $('btnSpeak').textContent = speakOn ? '🔊' : '🔇';
   $('btnSpeak').classList.toggle('off', !speakOn);
+  if (speakOn && 'speechSynthesis' in window) {
+    // ONにした瞬間に声でフィードバック（解錠も兼ねる）
+    ttsUnlocked = true;
+    const u = new SpeechSynthesisUtterance('読み上げオン');
+    u.lang = 'ja-JP';
+    if (jaVoice) u.voice = jaVoice;
+    u.rate = 1.2;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  } else {
+    speechSynthesis.cancel();
+  }
 };
 // 退出：confirm()はアプリ内ブラウザでブロックされることがあるため使わない。
 // 1回目のタップで「退出？」表示、3秒以内の2回目で確実に退出する
@@ -629,6 +663,7 @@ for (const s of STAMPS) {
   b.className = 'stamp ' + s.cls;
   b.innerHTML = `<span class="ic">${s.ic}</span><span class="lb">${s.lb}</span>`;
   b.onclick = () => {
+    unlockTTS();
     if (target) {
       const tm = members.get(target);
       pub({ k: 'stamp', id: s.id, to: target, toName: tm ? tm.name : '' });
