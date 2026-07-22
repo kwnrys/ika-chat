@@ -156,6 +156,7 @@
   .bubble .what { font-size: 19px; font-weight: 900; line-height: 1.3; }
   .bubble .what.plain { font-size: 16px; font-weight: 700; }
   .bubble .emoji { font-size: 28px; }
+  .bubble .simg { width: 84px; height: 84px; object-fit: contain; flex-shrink: 0; }
   .bubble.sys {
     border-left: none;
     background: none;
@@ -314,16 +315,18 @@
 // ===== スタンプ定義（ワンタップ即送信）=====
 // speak: 読み上げテキスト（プレイ中は画面を見られないので音声が本体）
 const STAMPS = [
-  { id: 'adv',     ic: '🟢', lb: '人数有利',   speak: '人数有利！', cls: 'good wide' },
-  { id: 'disadv',  ic: '🔴', lb: '人数不利',   speak: '人数不利！', cls: 'urgent wide' },
-  { id: 'push',    ic: '⬆️', lb: '前線上げて', speak: '前線上げて！', cls: '' },
-  { id: 'hide',    ic: '🥷', lb: '潜伏注意',   speak: '潜伏注意！', cls: 'urgent' },
-  { id: 'dead',    ic: '💀', lb: 'やられた',   speak: 'やられた！', cls: 'urgent' },
-  { id: 'sp',      ic: '✨', lb: 'SPあるよ',   speak: 'スペシャルあるよ！', cls: '' },
-  { id: 'wait',    ic: '⬇️', lb: 'ちょっと待って', speak: 'ちょっと待って！', cls: '' },
-  { id: 'nice',    ic: '👏', lb: 'ナイス',     speak: 'ナイス！', cls: '' },
+  { id: 'adv',     ic: '🟢', lb: '人数有利',   speak: '人数有利！', cls: 'good wide'   img: 'stamps/adv.png' },
+  { id: 'disadv',  ic: '🔴', lb: '人数不利',   speak: '人数不利！', cls: 'urgent wide'   img: 'stamps/disadv.png' },
+  { id: 'push',    ic: '⬆️', lb: '前線上げて', speak: '前線上げて！', cls: ''   img: 'stamps/push.png' },
+  { id: 'hide',    ic: '🥷', lb: '潜伏注意',   speak: '潜伏注意！', cls: 'urgent'   img: 'stamps/hide.png' },
+  { id: 'dead',    ic: '💀', lb: 'やられた',   speak: 'やられた！', cls: 'urgent'   img: 'stamps/dead.png' },
+  { id: 'sp',      ic: '✨', lb: 'SPあるよ',   speak: 'スペシャルあるよ！', cls: ''   img: 'stamps/sp.png' },
+  { id: 'wait',    ic: '⬇️', lb: 'ちょっと待って', speak: 'ちょっと待って！', cls: ''   img: 'stamps/wait.png' },
+  { id: 'nice',    ic: '👏', lb: 'ナイス',     speak: 'ナイス！', cls: ''   img: 'stamps/nice.png' },
 ];
 const STAMP_MAP = Object.fromEntries(STAMPS.map(s => [s.id, s]));
+// イラストを先読みして受信時に即表示
+for (const s of STAMPS) if (s.img) { const i = new Image(); i.src = s.img; }
 
 // ===== 通信：公開MQTTブローカー経由（サーバー不要・保存なし）=====
 // retainなしのpub/subのみを使うため、ブローカーにもメッセージは残らない
@@ -547,7 +550,8 @@ function addBubble(msg) {
     el.style.borderLeftColor = msg.color;
     // 宛先付きは「宛先さん、」をスタンプ本文と同じ大きさで表示
     const body = msg.toName ? `${msg.toName} さん、${s.speak || s.lb}` : (s.speak || s.lb);
-    el.innerHTML = `<span class="emoji">${s.ic}</span>
+    const face = s.img ? `<img class="simg" src="${s.img}" alt="">` : `<span class="emoji">${s.ic}</span>`;
+    el.innerHTML = `${face}
       <div><div class="who" style="color:${msg.color}">${esc(msg.name)}</div>
       <div class="what">${esc(body)}</div></div>`;
   } else {
