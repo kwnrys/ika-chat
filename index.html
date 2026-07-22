@@ -171,7 +171,7 @@
   /* スタンプグリッド：ワンタップ即送信 */
   #stamps {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 6px;
     padding: 8px 10px;
     background: var(--panel);
@@ -194,18 +194,20 @@
   .stamp:active { transform: scale(.9); background: #3a3a4c; }
   .stamp .ic { font-size: 21px; line-height: 1; }
   .stamp .lb { font-size: 10px; font-weight: 900; white-space: nowrap; }
+  .stamp { grid-column: span 2; }
+  .stamp.wide { grid-column: span 3; }
   .stamp.urgent { background: #4a2430; }
   .stamp.good { background: #24402f; }
 
   /* スマホでは正方形の大きなタイルにしてタップしやすく */
   @media (max-width: 480px) {
     .stamp {
-      aspect-ratio: 1 / 1;
+      height: 80px; /* 正方形（約115px）の7割ほど */
       justify-content: center;
-      gap: 6px;
+      gap: 5px;
       border-radius: 16px;
     }
-    .stamp .ic { font-size: 32px; }
+    .stamp .ic { font-size: 28px; }
     .stamp .lb { font-size: 11.5px; }
   }
 
@@ -312,11 +314,10 @@
 // ===== スタンプ定義（ワンタップ即送信）=====
 // speak: 読み上げテキスト（プレイ中は画面を見られないので音声が本体）
 const STAMPS = [
+  { id: 'adv',     ic: '🟢', lb: '人数有利',   speak: '人数有利！', cls: 'good wide' },
+  { id: 'disadv',  ic: '🔴', lb: '人数不利',   speak: '人数不利！', cls: 'urgent wide' },
   { id: 'push',    ic: '⬆️', lb: '前線上げて', speak: '前線上げて！', cls: '' },
   { id: 'back',    ic: '✋', lb: 'ちょっと待って', speak: 'ちょっと待って！', cls: 'urgent' },
-  { id: 'adv',     ic: '🟢', lb: '人数有利',   speak: '人数有利！', cls: 'good' },
-  { id: 'disadv',  ic: '🔴', lb: '人数不利',   speak: '人数不利！', cls: 'urgent' },
-  { id: 'hide',    ic: '🥷', lb: '潜伏注意',   speak: '潜伏注意！', cls: 'urgent' },
   { id: 'dead',    ic: '💀', lb: 'やられた',   speak: 'やられた！', cls: 'urgent' },
   { id: 'sp',      ic: '✨', lb: 'SPあるよ',   speak: 'スペシャルあるよ！', cls: '' },
   { id: 'comeon',  ic: '🙌', lb: 'カモン',     speak: 'カモン！', cls: '' },
